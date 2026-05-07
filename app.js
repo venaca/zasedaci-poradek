@@ -585,12 +585,12 @@ function showConfirm(message, onOk) {
 // LOGIN
 // ================================================================
 function showLoginScreen() {
-  document.getElementById('login-screen').hidden = false;
+  document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-password').focus();
 }
 
 function showApp() {
-  document.getElementById('login-screen').hidden = true;
+  document.getElementById('login-screen').style.display = 'none';
 }
 
 async function handleLogin() {
