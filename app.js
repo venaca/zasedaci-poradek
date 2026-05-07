@@ -5,6 +5,7 @@ import { initializeApp }                                  from 'https://www.gsta
 import { getAuth, signInWithEmailAndPassword,
          onAuthStateChanged }                             from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getDatabase, ref, set, get }                    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import interact                                          from 'https://cdn.jsdelivr.net/npm/interactjs/dist/interact.esm.min.js';
 
 // ================================================================
 // FIREBASE KONFIGURACE
@@ -63,7 +64,6 @@ const STATE = {
     weddingDate: '2026-06-13',
   },
   filters: { side: 'all', diet: 'all', rsvp: 'all', group: '', search: '' },
-  drag: { guestId: null, sourceType: null },
   editingGuestId: null,
 };
 
@@ -213,7 +213,7 @@ function renderSeats() {
 
 function renderSeatCell(cell, guest) {
   cell.className = 'seat ' + (guest ? 'occupied' : 'empty');
-  cell.draggable = !!guest;
+  cell.draggable = false;
   cell.style.cssText = '';
 
   if (guest) {
@@ -257,7 +257,7 @@ function renderGuestList() {
 function buildGuestCard(guest) {
   const li = document.createElement('li');
   li.className = 'guest-card';
-  li.draggable = true;
+  li.draggable = false;
   li.dataset.guestId = guest.id;
   li.dataset.side = guest.side || 'mutual';
 
@@ -339,167 +339,104 @@ function makeSeat(seatId) {
 }
 
 // ================================================================
-// DRAG AND DROP — Mouse (HTML5 API)
+// DRAG AND DROP — interact.js (mouse + touch)
 // ================================================================
-function initDragDrop() {
-  const guestList      = document.getElementById('guest-list');
-  const venue          = document.getElementById('venue');
-  const unassignedArea = document.getElementById('unassigned-area');
-
-  guestList.addEventListener('dragstart', e => {
-    const card = e.target.closest('.guest-card');
-    if (!card) return;
-    STATE.drag = { guestId: card.dataset.guestId, sourceType: 'sidebar' };
-    e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => card.classList.add('dragging'), 0);
-  });
-  guestList.addEventListener('dragend', e => {
-    e.target.closest('.guest-card')?.classList.remove('dragging');
-    clearDragState();
-  });
-
-  venue.addEventListener('dragstart', e => {
-    const seat = e.target.closest('.seat.occupied');
-    if (!seat) return;
-    const g = getGuestAt(seat.dataset.seatId);
-    if (!g) return;
-    STATE.drag = { guestId: g.id, sourceType: 'seat' };
-    e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => seat.classList.add('dragging'), 0);
-  });
-  venue.addEventListener('dragend', e => {
-    e.target.closest('.seat')?.classList.remove('dragging');
-    clearDragState();
-  });
-
-  venue.addEventListener('dragover', e => {
-    const seat = e.target.closest('.seat');
-    if (!seat || !STATE.drag.guestId) return;
-    e.preventDefault();
-    document.querySelectorAll('.seat.drag-over').forEach(s => s.classList.remove('drag-over'));
-    seat.classList.add('drag-over');
-  });
-  venue.addEventListener('dragleave', e => {
-    if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
-      document.querySelectorAll('.seat.drag-over').forEach(s => s.classList.remove('drag-over'));
-    }
-  });
-  venue.addEventListener('drop', e => {
-    e.preventDefault();
-    const seat = e.target.closest('.seat');
-    document.querySelectorAll('.seat.drag-over').forEach(s => s.classList.remove('drag-over'));
-    if (!seat || !STATE.drag.guestId) return;
-    assignSeat(STATE.drag.guestId, seat.dataset.seatId);
-    renderSeats(); renderGuestList(); renderStats();
-    clearDragState();
-  });
-
-  venue.addEventListener('click', e => {
-    const seat = e.target.closest('.seat.occupied');
-    if (seat && !STATE.drag.guestId) {
-      const g = getGuestAt(seat.dataset.seatId);
-      if (g) openGuestModal(g.id);
-    }
-  });
-
-  unassignedArea.addEventListener('dragover', e => {
-    if (STATE.drag.sourceType === 'seat') {
-      e.preventDefault();
-      unassignedArea.classList.add('drag-over');
-    }
-  });
-  unassignedArea.addEventListener('dragleave', () => {
-    unassignedArea.classList.remove('drag-over');
-  });
-  unassignedArea.addEventListener('drop', e => {
-    e.preventDefault();
-    unassignedArea.classList.remove('drag-over');
-    if (STATE.drag.sourceType === 'seat' && STATE.drag.guestId) {
-      unassignGuest(STATE.drag.guestId);
-      renderSeats(); renderGuestList(); renderStats();
-    }
-    clearDragState();
-  });
-}
-
-function clearDragState() {
-  STATE.drag = { guestId: null, sourceType: null };
-}
-
-// ================================================================
-// DRAG AND DROP — Touch fallback
-// ================================================================
-function initTouchDrag() {
-  let touchGuest = null;
+function initInteract() {
+  let activeGuestId = null;
+  let activeFromSeat = null;
   let ghost = null;
   let sourceEl = null;
+  let lastX = 0, lastY = 0;
 
-  document.addEventListener('touchstart', e => {
-    const card = e.target.closest('.guest-card');
-    const seat = e.target.closest('.seat.occupied');
-    if (!card && !seat) return;
-
-    e.preventDefault();
-
-    if (card) {
-      touchGuest = { id: card.dataset.guestId };
-      sourceEl = card;
-    } else {
-      const g = getGuestAt(seat.dataset.seatId);
-      if (!g) return;
-      touchGuest = { id: g.id, fromSeat: seat.dataset.seatId };
-      sourceEl = seat;
-    }
-
-    sourceEl.classList.add('dragging');
+  function startDrag(el, guestId, fromSeat) {
+    activeGuestId = guestId;
+    activeFromSeat = fromSeat || null;
+    sourceEl = el;
+    el.classList.add('dragging');
     window._closeSidebar?.({ instant: true });
 
-    const name = STATE.guests.find(g => g.id === touchGuest.id);
+    const guest = STATE.guests.find(g => g.id === guestId);
     ghost = document.createElement('div');
     ghost.className = 'touch-ghost';
-    ghost.textContent = name ? `${name.firstName} ${name.lastName}` : '…';
+    ghost.textContent = guest ? `${guest.firstName} ${guest.lastName}` : '…';
     document.body.appendChild(ghost);
-    updateGhostPos(e.touches[0]);
-  }, { passive: false });
+  }
 
-  document.addEventListener('touchmove', e => {
-    if (!touchGuest || !ghost) return;
-    e.preventDefault();
-    updateGhostPos(e.touches[0]);
+  function moveDrag(x, y) {
+    lastX = x; lastY = y;
+    if (!ghost) return;
+    ghost.style.left = x + 'px';
+    ghost.style.top  = y + 'px';
 
-    document.querySelectorAll('.seat.touch-over').forEach(s => s.classList.remove('touch-over'));
-    const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-    el?.closest('.seat')?.classList.add('touch-over');
-  }, { passive: false });
+    document.querySelectorAll('.seat.drop-hover').forEach(s => s.classList.remove('drop-hover'));
+    const el = document.elementFromPoint(x, y);
+    const hoverSeat = el?.closest('.seat');
+    if (hoverSeat && hoverSeat !== sourceEl) hoverSeat.classList.add('drop-hover');
 
-  document.addEventListener('touchend', e => {
-    if (!touchGuest) return;
-    const t = e.changedTouches[0];
-    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const inUnassigned = el?.closest('#unassigned-area');
+    document.getElementById('unassigned-area')
+      .classList.toggle('drag-over', !!inUnassigned && !!activeFromSeat);
+  }
+
+  function endDrag() {
+    if (!activeGuestId) return;
+
+    const el = document.elementFromPoint(lastX, lastY);
     const targetSeat = el?.closest('.seat');
     const inUnassigned = el?.closest('#unassigned-area');
 
     if (targetSeat && targetSeat !== sourceEl) {
-      assignSeat(touchGuest.id, targetSeat.dataset.seatId);
+      assignSeat(activeGuestId, targetSeat.dataset.seatId);
       renderSeats(); renderGuestList(); renderStats();
-    } else if (inUnassigned && touchGuest.fromSeat) {
-      unassignGuest(touchGuest.id);
+    } else if (inUnassigned && activeFromSeat) {
+      unassignGuest(activeGuestId);
       renderSeats(); renderGuestList(); renderStats();
     }
 
-    document.querySelectorAll('.seat.touch-over').forEach(s => s.classList.remove('touch-over'));
+    document.querySelectorAll('.seat.drop-hover').forEach(s => s.classList.remove('drop-hover'));
+    document.getElementById('unassigned-area').classList.remove('drag-over');
     sourceEl?.classList.remove('dragging');
     ghost?.remove();
     ghost = null;
-    touchGuest = null;
+    activeGuestId = null;
+    activeFromSeat = null;
     sourceEl = null;
-  }, { passive: true });
-
-  function updateGhostPos(touch) {
-    if (!ghost) return;
-    ghost.style.left = touch.clientX + 'px';
-    ghost.style.top  = touch.clientY + 'px';
   }
+
+  interact('.guest-card').draggable({
+    listeners: {
+      start(event) {
+        const el = event.target.closest('.guest-card');
+        startDrag(el, el.dataset.guestId, null);
+        moveDrag(event.clientX, event.clientY);
+      },
+      move(event)  { moveDrag(event.clientX, event.clientY); },
+      end()        { endDrag(); },
+    },
+  });
+
+  interact('.seat.occupied').draggable({
+    listeners: {
+      start(event) {
+        const seat = event.target.closest('.seat');
+        const guest = getGuestAt(seat.dataset.seatId);
+        if (!guest) return;
+        startDrag(seat, guest.id, seat.dataset.seatId);
+        moveDrag(event.clientX, event.clientY);
+      },
+      move(event)  { moveDrag(event.clientX, event.clientY); },
+      end()        { endDrag(); },
+    },
+  });
+
+  // Klik na obsazené sedadlo → editační modal (pokud neprobíhá drag)
+  document.getElementById('venue').addEventListener('click', e => {
+    const seat = e.target.closest('.seat.occupied');
+    if (seat && !activeGuestId) {
+      const g = getGuestAt(seat.dataset.seatId);
+      if (g) openGuestModal(g.id);
+    }
+  });
 }
 
 // ================================================================
@@ -755,8 +692,7 @@ function initMobileSidebar() {
 // ================================================================
 document.addEventListener('DOMContentLoaded', () => {
   buildVenue();
-  initDragDrop();
-  initTouchDrag();
+  initInteract();
   initEvents();
   initLoginEvents();
   initMobileSidebar();

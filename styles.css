@@ -233,7 +233,6 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
 }
 .guest-card:hover {
   transform: translateY(-1px);
@@ -496,7 +495,6 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
   user-select: none;
   -webkit-user-select: none;
 }
-.seat.occupied { touch-action: none; }
 
 /* Bottle-green top strip on occupied seats */
 .seat::before {
@@ -533,7 +531,6 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
 
 /* Drag-over state */
 .seat.drag-over,
-.seat.touch-over,
 .seat.drop-hover {
   background: var(--bottle-tint) !important;
   border-color: var(--bottle) !important;
