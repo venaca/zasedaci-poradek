@@ -5,7 +5,7 @@ import { initializeApp }                                  from 'https://www.gsta
 import { getAuth, signInWithEmailAndPassword,
          onAuthStateChanged }                             from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getDatabase, ref, set, get }                    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
-import interact                                          from 'https://cdn.jsdelivr.net/npm/interactjs/dist/interact.esm.min.js';
+import interact                                          from 'https://esm.sh/interactjs@1.10.27';
 
 // ================================================================
 // FIREBASE KONFIGURACE
