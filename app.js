@@ -706,6 +706,33 @@ function initEvents() {
 }
 
 // ================================================================
+// MOBILE SIDEBAR TOGGLE
+// ================================================================
+function initMobileSidebar() {
+  const toggle  = document.getElementById('btn-sidebar-toggle');
+  const overlay = document.getElementById('sidebar-overlay');
+  const sidebar = document.getElementById('sidebar');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+
+  toggle?.addEventListener('click', openSidebar);
+  overlay?.addEventListener('click', closeSidebar);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+}
+
+// ================================================================
 // INIT
 // ================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -714,6 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTouchDrag();
   initEvents();
   initLoginEvents();
+  initMobileSidebar();
 
   onAuthStateChanged(auth, user => {
     if (user) {

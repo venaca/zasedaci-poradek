@@ -799,6 +799,95 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
   color: var(--ink-2);
 }
 
+/* ================================================================
+   RESPONSIVE — Tablet (768px – 1023px)
+   ================================================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  #sidebar { width: 280px; }
+
+  #venue-scroll { padding: 32px 32px 60px; }
+
+  #wings-wrapper { gap: 40px; }
+
+  #left-wing  .seat-column,
+  #right-wing .seat-column { width: 130px; }
+}
+
+/* ================================================================
+   RESPONSIVE — Mobil (max-width: 767px)
+   ================================================================ */
+@media (max-width: 767px) {
+  body { overflow: auto; }
+
+  /* Sidebar jako slide-in overlay */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 88vw;
+    max-width: 320px;
+    height: 100%;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 24px rgba(31,26,18,0.18);
+  }
+  #sidebar.open { transform: translateX(0); }
+
+  /* Floor plan zabere celou šířku */
+  #floor-plan { width: 100%; min-height: 100vh; overflow: visible; }
+
+  /* Hamburger visible */
+  #btn-sidebar-toggle { display: flex; }
+
+  /* Top bar compact */
+  #top-bar { padding: 10px 14px; gap: 10px; }
+
+  #stats-bar { font-size: 13px; }
+
+  #action-buttons button { padding: 6px 10px; font-size: 11px; }
+
+  /* Venue scroll */
+  #venue-scroll { padding: 20px 12px 60px; overflow: auto; }
+
+  /* Head table full width */
+  #head-table { width: 100%; }
+
+  /* Wings */
+  #wings-wrapper { gap: 16px; }
+
+  #left-wing  .seat-column,
+  #right-wing .seat-column { width: 90px; }
+
+  .seat-column { padding: 0 6px; }
+
+  /* Seats – větší touch target */
+  .seat { min-height: 56px; padding: 18px 4px 8px; }
+
+  .seat-name { font-size: 13px; }
+  .seat-surname { font-size: 9px; }
+  .seat-diet-icon { font-size: 11px; top: 12px; right: 4px; }
+
+  /* Větší hit area pro edit tlačítko */
+  .card-edit-btn { padding: 8px; opacity: 0.5; }
+
+  /* Modaly jako bottom sheet */
+  .modal { padding: 0; align-items: flex-end; }
+  .modal-box {
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    max-height: 92vh;
+    padding: 24px 18px 32px;
+  }
+  .modal-box-sm { padding: 24px 18px 32px; }
+
+  .form-row { grid-template-columns: 1fr; gap: 10px; }
+
+  .modal-actions { flex-wrap: wrap; gap: 8px; }
+  .btn-danger { margin-right: 0; width: 100%; justify-content: center; order: 3; }
+
+  /* Login */
+  #login-box { padding: 28px 20px; }
+}
+
 @media print {
   @page { size: A3 landscape; margin: 12mm; }
   body { background: white !important; overflow: visible; display: block; }
@@ -811,6 +900,33 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
   .seat { break-inside: avoid; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---------- Hamburger button (desktop: hidden) ---------- */
+#btn-sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  transition: background 0.15s;
+}
+#btn-sidebar-toggle:hover { background: var(--cream-2); }
+
+/* ---------- Sidebar overlay backdrop (mobile) ---------- */
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(31,26,18,0.45);
+  z-index: 150;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+#sidebar-overlay.visible { display: block; }
 
 /* ---------- Scrollbars ---------- */
 #unassigned-area::-webkit-scrollbar,
