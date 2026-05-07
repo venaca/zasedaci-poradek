@@ -1,4 +1,33 @@
-﻿'use strict';
+// ================================================================
+// FIREBASE — importy z CDN (ES module)
+// ================================================================
+import { initializeApp }                                  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword,
+         onAuthStateChanged }                             from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getDatabase, ref, set, get }                    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+// ================================================================
+// FIREBASE KONFIGURACE
+// Vyplňte hodnotami z Firebase konzole:
+//   Project Settings → Your apps → Web app → firebaseConfig
+// ================================================================
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyDnYHbZnIQ_2QvAbUxGF4UsnfOggP6kTL0',
+  authDomain:        'zasedaci-poradek.firebaseapp.com',
+  databaseURL:       'https://zasedaci-poradek-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId:         'zasedaci-poradek',
+  storageBucket:     'zasedaci-poradek.firebasestorage.app',
+  messagingSenderId: '1066934378948',
+  appId:             '1:1066934378948:web:6c9287a2a2e2e797354491',
+};
+
+// Sdílený e-mail pro všechny uživatele (jen heslo zadává uživatel)
+const FIREBASE_EMAIL  = 'venaca99@gmail.com';
+const FIREBASE_DB_PATH = 'zasedaci-poradek';
+
+const fbApp = initializeApp(FIREBASE_CONFIG);
+const auth  = getAuth(fbApp);
+const db    = getDatabase(fbApp);
 
 // ================================================================
 // CONSTANTS
@@ -13,7 +42,6 @@ const SEAT_IDS = [
   ...Array.from({ length: 15 }, (_, i) => `right-outer-${i + 1}`),
 ];
 
-// Material Symbols Outlined icon names for each diet (standard = no icon)
 const DIET_FONT_ICONS = {
   vegetarian: 'eco',
   abstinent:  'no_drinks',
@@ -40,13 +68,14 @@ const STATE = {
 };
 
 // ================================================================
-// PERSISTENCE
+// PERSISTENCE — localStorage
 // ================================================================
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     guests: STATE.guests,
     meta: STATE.meta,
   }));
+  if (auth.currentUser) debouncedSaveToFirebase();
 }
 
 function load() {
@@ -55,11 +84,56 @@ function load() {
     if (!raw) return;
     const data = JSON.parse(raw);
     if (Array.isArray(data.guests)) STATE.guests = data.guests;
-    // meta (names, date) is hardcoded — never overwrite from storage
   } catch (e) {
-    console.error('Chyba při načítání:', e);
+    console.error('Chyba při načítání z localStorage:', e);
   }
 }
+
+// ================================================================
+// FIREBASE — sync
+// ================================================================
+async function loadFromFirebase() {
+  try {
+    const snapshot = await get(ref(db, FIREBASE_DB_PATH));
+    const data = snapshot.val();
+    if (data && Array.isArray(data.guests)) {
+      STATE.guests = data.guests;
+      // Aktualizuj lokální cache bez spuštění Firebase zápisu
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ guests: STATE.guests, meta: STATE.meta }));
+      renderAll();
+    } else {
+      // Firebase je prázdná — nahraj data z localStorage
+      load();
+      renderAll();
+      if (STATE.guests.length > 0) saveToFirebase();
+    }
+  } catch (e) {
+    console.error('Chyba při načítání z Firebase:', e);
+    load();
+    renderAll();
+  }
+}
+
+async function saveToFirebase() {
+  if (!auth.currentUser) return;
+  try {
+    await set(ref(db, FIREBASE_DB_PATH), {
+      guests: STATE.guests,
+      meta: STATE.meta,
+    });
+  } catch (e) {
+    console.error('Chyba při ukládání do Firebase:', e);
+  }
+}
+
+function debounce(fn, ms) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+const debouncedSaveToFirebase = debounce(saveToFirebase, 1000);
 
 // ================================================================
 // UTILITIES
@@ -99,7 +173,6 @@ function deleteGuest(id) {
 function assignSeat(guestId, targetSeatId) {
   const guest = STATE.guests.find(g => g.id === guestId);
   if (!guest) return;
-  // If target is occupied, swap
   const occupant = STATE.guests.find(g => g.seatId === targetSeatId && g.id !== guestId);
   const prevSeat = guest.seatId;
   if (occupant) occupant.seatId = prevSeat;
@@ -153,6 +226,7 @@ function renderSeatCell(cell, guest) {
     cell.innerHTML = `<span class="seat-empty-label">—</span>`;
   }
 }
+
 function escHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -199,6 +273,7 @@ function buildGuestCard(guest) {
 
   return li;
 }
+
 function getFilteredGuests() {
   const { side, diet, rsvp, group, search } = STATE.filters;
   return STATE.guests.filter(g => {
@@ -236,6 +311,7 @@ function renderStats() {
 
   document.getElementById('stats-bar').innerHTML = parts.join(` ${sep} `);
 }
+
 // ================================================================
 // DOM CONSTRUCTION (SEATS)
 // ================================================================
@@ -266,11 +342,10 @@ function makeSeat(seatId) {
 // DRAG AND DROP — Mouse (HTML5 API)
 // ================================================================
 function initDragDrop() {
-  const guestList     = document.getElementById('guest-list');
-  const venue         = document.getElementById('venue');
+  const guestList      = document.getElementById('guest-list');
+  const venue          = document.getElementById('venue');
   const unassignedArea = document.getElementById('unassigned-area');
 
-  // Sidebar: drag start
   guestList.addEventListener('dragstart', e => {
     const card = e.target.closest('.guest-card');
     if (!card) return;
@@ -283,7 +358,6 @@ function initDragDrop() {
     clearDragState();
   });
 
-  // Venue seat: drag start
   venue.addEventListener('dragstart', e => {
     const seat = e.target.closest('.seat.occupied');
     if (!seat) return;
@@ -298,7 +372,6 @@ function initDragDrop() {
     clearDragState();
   });
 
-  // Venue: drag over + drop
   venue.addEventListener('dragover', e => {
     const seat = e.target.closest('.seat');
     if (!seat || !STATE.drag.guestId) return;
@@ -321,7 +394,6 @@ function initDragDrop() {
     clearDragState();
   });
 
-  // Venue: click occupied seat → edit
   venue.addEventListener('click', e => {
     const seat = e.target.closest('.seat.occupied');
     if (seat && !STATE.drag.guestId) {
@@ -330,7 +402,6 @@ function initDragDrop() {
     }
   });
 
-  // Sidebar unassign area
   unassignedArea.addEventListener('dragover', e => {
     if (STATE.drag.sourceType === 'seat') {
       e.preventDefault();
@@ -435,7 +506,6 @@ function openGuestModal(guestId = null) {
     title.textContent = 'Upravit hosta';
     deleteBtn.hidden = false;
     form.reset();
-    // Populate each named field
     const fields = ['firstName','lastName','diet','side','group','relationship','rsvp','notes'];
     for (const f of fields) {
       const el = form.elements[f];
@@ -471,7 +541,6 @@ function exportJSON() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch {
-    // fallback for older browsers
     const a = document.createElement('a');
     a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(data);
     a.download = `zasedaci-poradek-${new Date().toISOString().slice(0, 10)}.json`;
@@ -513,19 +582,60 @@ function showConfirm(message, onOk) {
 }
 
 // ================================================================
+// LOGIN
+// ================================================================
+function showLoginScreen() {
+  document.getElementById('login-screen').hidden = false;
+  document.getElementById('login-password').focus();
+}
+
+function showApp() {
+  document.getElementById('login-screen').hidden = true;
+}
+
+async function handleLogin() {
+  const passwordEl = document.getElementById('login-password');
+  const errorEl    = document.getElementById('login-error');
+  const btn        = document.getElementById('login-btn');
+
+  const password = passwordEl.value.trim();
+  if (!password) return;
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  errorEl.hidden = true;
+
+  try {
+    await signInWithEmailAndPassword(auth, FIREBASE_EMAIL, password);
+    // onAuthStateChanged se postará o zobrazení aplikace
+  } catch {
+    errorEl.hidden = false;
+    passwordEl.value = '';
+    passwordEl.focus();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Vstoupit';
+  }
+}
+
+function initLoginEvents() {
+  document.getElementById('login-btn').addEventListener('click', handleLogin);
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+}
+
+// ================================================================
 // EVENT WIRING
 // ================================================================
 function initEvents() {
-  // Add guest
   document.getElementById('btn-add-guest').addEventListener('click', () => openGuestModal(null));
 
-  // Edit buttons in guest list (delegation)
   document.getElementById('guest-list').addEventListener('click', e => {
     const btn = e.target.closest('.card-edit-btn');
     if (btn) { e.stopPropagation(); openGuestModal(btn.dataset.id); }
   });
 
-  // Guest form submit
   document.getElementById('form-guest').addEventListener('submit', e => {
     e.preventDefault();
     const els = e.target.elements;
@@ -560,7 +670,6 @@ function initEvents() {
 
   document.getElementById('btn-cancel-guest').addEventListener('click', closeGuestModal);
 
-  // Confirm dialog
   document.getElementById('confirm-ok').addEventListener('click', () => {
     document.getElementById('modal-confirm').hidden = true;
     if (pendingConfirm) { pendingConfirm(); pendingConfirm = null; }
@@ -570,14 +679,12 @@ function initEvents() {
     pendingConfirm = null;
   });
 
-  // Filters
-  document.getElementById('filter-side').addEventListener('change',  e => { STATE.filters.side  = e.target.value; renderGuestList(); });
-  document.getElementById('filter-diet').addEventListener('change',  e => { STATE.filters.diet  = e.target.value; renderGuestList(); });
-  document.getElementById('filter-rsvp').addEventListener('change',  e => { STATE.filters.rsvp  = e.target.value; renderGuestList(); });
+  document.getElementById('filter-side').addEventListener('change',  e => { STATE.filters.side   = e.target.value; renderGuestList(); });
+  document.getElementById('filter-diet').addEventListener('change',  e => { STATE.filters.diet   = e.target.value; renderGuestList(); });
+  document.getElementById('filter-rsvp').addEventListener('change',  e => { STATE.filters.rsvp   = e.target.value; renderGuestList(); });
   document.getElementById('filter-group').addEventListener('input',  e => { STATE.filters.group  = e.target.value; renderGuestList(); });
   document.getElementById('filter-search').addEventListener('input', e => { STATE.filters.search = e.target.value; renderGuestList(); });
 
-  // Export / Import / Print
   document.getElementById('btn-export').addEventListener('click', exportJSON);
   document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-input').click());
   document.getElementById('file-input').addEventListener('change', e => {
@@ -587,12 +694,10 @@ function initEvents() {
   });
   document.getElementById('btn-print').addEventListener('click', () => window.print());
 
-  // Close modals on backdrop click
   document.querySelectorAll('.modal').forEach(modal => {
     modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
   });
 
-  // Escape key
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       document.querySelectorAll('.modal:not([hidden])').forEach(m => m.hidden = true);
@@ -605,9 +710,17 @@ function initEvents() {
 // ================================================================
 document.addEventListener('DOMContentLoaded', () => {
   buildVenue();
-  load();
   initDragDrop();
   initTouchDrag();
   initEvents();
-  renderAll();
+  initLoginEvents();
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      showApp();
+      loadFromFirebase();
+    } else {
+      showLoginScreen();
+    }
+  });
 });

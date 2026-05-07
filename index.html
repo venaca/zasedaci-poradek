@@ -9,6 +9,19 @@
 </head>
 <body>
 
+  <!-- ===== LOGIN SCREEN ===== -->
+  <div id="login-screen">
+    <div id="login-box">
+      <h1>Zasedací pořádek</h1>
+      <p id="login-subtitle">Václav &amp; Nikola · 13. 6. 2026</p>
+      <div id="login-form">
+        <input type="password" id="login-password" placeholder="Heslo" autocomplete="current-password">
+        <button id="login-btn">Vstoupit</button>
+        <p id="login-error" hidden>Špatné heslo. Zkuste to znovu.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== SIDEBAR ===== -->
   <aside id="sidebar">
     <div id="sidebar-header">
@@ -182,6 +195,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
