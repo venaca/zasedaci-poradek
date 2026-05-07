@@ -444,15 +444,17 @@ function initInteract() {
 // ================================================================
 function openGuestModal(guestId = null) {
   STATE.editingGuestId = guestId;
-  const form      = document.getElementById('form-guest');
-  const deleteBtn = document.getElementById('btn-delete-guest');
-  const title     = document.getElementById('modal-guest-title');
+  const form        = document.getElementById('form-guest');
+  const deleteBtn   = document.getElementById('btn-delete-guest');
+  const unassignBtn = document.getElementById('btn-unassign-guest');
+  const title       = document.getElementById('modal-guest-title');
 
   if (guestId) {
     const g = STATE.guests.find(g => g.id === guestId);
     if (!g) return;
     title.textContent = 'Upravit hosta';
     deleteBtn.hidden = false;
+    unassignBtn.hidden = !g.seatId;
     form.reset();
     const fields = ['firstName','lastName','diet','side','group','relationship','rsvp','notes'];
     for (const f of fields) {
@@ -463,6 +465,7 @@ function openGuestModal(guestId = null) {
     title.textContent = 'Přidat hosta';
     form.reset();
     deleteBtn.hidden = true;
+    unassignBtn.hidden = true;
   }
   document.getElementById('modal-guest').hidden = false;
   form.elements.firstName.focus();
@@ -614,6 +617,12 @@ function initEvents() {
       closeGuestModal();
       renderAll();
     });
+  });
+
+  document.getElementById('btn-unassign-guest').addEventListener('click', () => {
+    unassignGuest(STATE.editingGuestId);
+    closeGuestModal();
+    renderAll();
   });
 
   document.getElementById('btn-cancel-guest').addEventListener('click', closeGuestModal);

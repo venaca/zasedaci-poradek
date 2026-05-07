@@ -918,8 +918,8 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
 
   .seat-column { padding: 0 8px; }
 
-  /* Seats – větší touch target */
-  .seat { min-height: 56px; padding: 18px 4px 8px; }
+  /* Seats – fixní výška aby se layout neposouvalo při přiřazení hosta */
+  .seat { height: 72px; min-height: unset; padding: 18px 4px 8px; }
 
   .seat-name { font-size: 13px; }
   .seat-surname { font-size: 9px; }
