@@ -799,6 +799,20 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
   color: var(--ink-2);
 }
 
+/* ---------- Sidebar close button (mobile only) ---------- */
+#btn-sidebar-close {
+  display: none;
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 32px; height: 32px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-3);
+  border-radius: var(--r-sm);
+  transition: background 0.15s, color 0.15s;
+}
+#btn-sidebar-close:hover { background: var(--cream-2); color: var(--ink); }
+
 /* ---------- Hamburger button (desktop: hidden) ---------- */
 #btn-sidebar-toggle {
   display: none;
@@ -845,6 +859,10 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
    ================================================================ */
 @media (max-width: 767px) {
   body { overflow: auto; }
+
+  /* Close button viditelný na mobilu */
+  #btn-sidebar-close { display: flex; align-items: center; justify-content: center; }
+  #sidebar-header { position: relative; padding-right: 48px; }
 
   /* Sidebar jako slide-in overlay */
   #sidebar {
