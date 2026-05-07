@@ -432,19 +432,27 @@ function clearDragState() {
 function initTouchDrag() {
   let touchGuest = null;
   let ghost = null;
+  let sourceEl = null;
 
   document.addEventListener('touchstart', e => {
     const card = e.target.closest('.guest-card');
     const seat = e.target.closest('.seat.occupied');
     if (!card && !seat) return;
 
+    // Zabráníme výběru textu a scrollu při uchopení prvku
+    e.preventDefault();
+
     if (card) {
       touchGuest = { id: card.dataset.guestId };
+      sourceEl = card;
     } else {
       const g = getGuestAt(seat.dataset.seatId);
       if (!g) return;
       touchGuest = { id: g.id, fromSeat: seat.dataset.seatId };
+      sourceEl = seat;
     }
+
+    sourceEl.classList.add('dragging');
 
     // Zavři sidebar okamžitě — stůl musí být viditelný pro drop
     window._closeSidebar?.({ instant: true });
@@ -455,16 +463,18 @@ function initTouchDrag() {
     ghost.textContent = name ? `${name.firstName} ${name.lastName}` : '…';
     document.body.appendChild(ghost);
     updateGhostPos(e.touches[0]);
-  }, { passive: true });
+  }, { passive: false });
 
   document.addEventListener('touchmove', e => {
     if (!touchGuest || !ghost) return;
+    // Zabráníme scrollu stránky během dragu
+    e.preventDefault();
     updateGhostPos(e.touches[0]);
 
     document.querySelectorAll('.seat.touch-over').forEach(s => s.classList.remove('touch-over'));
     const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
     el?.closest('.seat')?.classList.add('touch-over');
-  }, { passive: true });
+  }, { passive: false });
 
   document.addEventListener('touchend', e => {
     if (!touchGuest) return;
@@ -473,7 +483,7 @@ function initTouchDrag() {
     const targetSeat = el?.closest('.seat');
     const inUnassigned = el?.closest('#unassigned-area');
 
-    if (targetSeat) {
+    if (targetSeat && targetSeat !== sourceEl) {
       assignSeat(touchGuest.id, targetSeat.dataset.seatId);
       renderSeats(); renderGuestList(); renderStats();
     } else if (inUnassigned && touchGuest.fromSeat) {
@@ -482,9 +492,11 @@ function initTouchDrag() {
     }
 
     document.querySelectorAll('.seat.touch-over').forEach(s => s.classList.remove('touch-over'));
+    sourceEl?.classList.remove('dragging');
     ghost?.remove();
     ghost = null;
     touchGuest = null;
+    sourceEl = null;
   }, { passive: true });
 
   function updateGhostPos(touch) {
