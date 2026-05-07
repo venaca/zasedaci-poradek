@@ -446,6 +446,9 @@ function initTouchDrag() {
       touchGuest = { id: g.id, fromSeat: seat.dataset.seatId };
     }
 
+    // Zavři sidebar okamžitě — stůl musí být viditelný pro drop
+    window._closeSidebar?.({ instant: true });
+
     const name = STATE.guests.find(g => g.id === touchGuest.id);
     ghost = document.createElement('div');
     ghost.className = 'touch-ghost';
@@ -709,22 +712,30 @@ function initEvents() {
 // MOBILE SIDEBAR TOGGLE
 // ================================================================
 function initMobileSidebar() {
-  const toggle  = document.getElementById('btn-sidebar-toggle');
-  const overlay = document.getElementById('sidebar-overlay');
-  const sidebar = document.getElementById('sidebar');
+  const toggle   = document.getElementById('btn-sidebar-toggle');
+  const closeBtn = document.getElementById('btn-sidebar-close');
+  const overlay  = document.getElementById('sidebar-overlay');
+  const sidebar  = document.getElementById('sidebar');
 
   function openSidebar() {
     sidebar.classList.add('open');
     overlay.classList.add('visible');
     document.body.style.overflow = 'hidden';
   }
-  function closeSidebar() {
+
+  function closeSidebar({ instant = false } = {}) {
+    if (instant) sidebar.style.transition = 'none';
     sidebar.classList.remove('open');
     overlay.classList.remove('visible');
     document.body.style.overflow = '';
+    if (instant) requestAnimationFrame(() => requestAnimationFrame(() => sidebar.style.transition = ''));
   }
 
+  // Exponuj pro touch drag
+  window._closeSidebar = closeSidebar;
+
   toggle?.addEventListener('click', openSidebar);
+  closeBtn?.addEventListener('click', closeSidebar);
   overlay?.addEventListener('click', closeSidebar);
 
   document.addEventListener('keydown', e => {
