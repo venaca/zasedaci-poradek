@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "zasedaci-poradek": {
+      ".read": "auth != null && auth.token.email == 'venaca99@gmail.com'",
+      ".write": "auth != null && auth.token.email == 'venaca99@gmail.com'"
+    }
+  }
+}
