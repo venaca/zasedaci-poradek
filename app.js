@@ -47,8 +47,9 @@ const DIET_FONT_ICONS = {
   vegetarian: 'eco',
   abstinent:  'no_drinks',
   child:      'child_care',
+  no_food:    'no_meals',
 };
-const DIET_LABELS = { standard: 'Standardní', vegetarian: 'Vegetarián', abstinent: 'Abstinent', child: 'Dítě' };
+const DIET_LABELS = { standard: 'Standardní', vegetarian: 'Vegetarián', abstinent: 'Abstinent', child: 'Dítě', no_food: 'Bez jídla' };
 const RSVP_LABELS = { confirmed: 'Potvrzeno', pending: 'Čeká', declined: 'Odmítnuto' };
 
 
