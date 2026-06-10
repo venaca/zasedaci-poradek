@@ -271,7 +271,7 @@ function buildGuestCard(guest) {
   li.innerHTML =
     (dietSymbol ? `<span class="gc-diet-icon material-symbols-outlined" title="${DIET_LABELS[guest.diet] || ''}">${dietSymbol}</span>` : '') +
     `<div class="gc-body">` +
-      `<div class="gc-name">${escHtml(guest.firstName)} ${escHtml(guest.lastName)}</div>` +
+      `<div class="gc-name">${escHtml(guest.firstName)}${guest.lastName ? ' ' + escHtml(guest.lastName) : ''}</div>` +
       (guest.group ? `<div class="gc-meta">${escHtml(guest.group)}</div>` : '') +
     `</div>` +
     `<button class="card-edit-btn" data-id="${guest.id}" title="Upravit">✏</button>`;
@@ -605,7 +605,7 @@ function initEvents() {
       rsvp:         els.rsvp.value,
       notes:        els.notes.value.trim(),
     };
-    if (!data.firstName || !data.lastName) return;
+    if (!data.firstName) return;
 
     if (STATE.editingGuestId) {
       updateGuest(STATE.editingGuestId, data);
