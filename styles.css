@@ -947,15 +947,79 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
 }
 
 @media print {
-  @page { size: A3 landscape; margin: 12mm; }
-  body { background: white !important; overflow: visible; display: block; }
+  @page { size: A4 portrait; margin: 7mm; }
+
+  body { background: white !important; overflow: visible; display: block; min-height: 0; height: auto; }
   #sidebar, #top-bar, #btn-add-guest, .modal { display: none !important; }
-  #floor-plan { background: white; height: auto; overflow: visible; }
-  #floor-plan::before, #floor-plan::after { opacity: 0.3; }
+
+  #floor-plan { background: white; height: auto; min-height: 0; overflow: visible; }
+  /* Botanické rohy — v tisku zachováme, jemně */
+  #floor-plan::before, #floor-plan::after { opacity: 0.25; }
+
   #venue-scroll { overflow: visible; padding: 0; }
-  #venue { max-width: 100%; }
-  #print-legend { display: block; }
-  .seat { break-inside: avoid; }
+
+  /* Celý venue musí zůstat pohromadě na jedné stránce */
+  #venue {
+    max-width: 100%;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    zoom: 1.163;
+  }
+
+  /* ---- Sedadla: maximálně kompaktní při zachování čitelnosti ---- */
+  .seat {
+    min-height: 39px;
+    padding: 10px 5px 4px;
+    border-radius: 3px;
+    break-inside: avoid;
+  }
+  .seat::before { height: 5px; border-radius: 3px 3px 0 0; }
+
+  .seat-diet-icon { top: 50%; right: 3px; font-size: 5px; transform: translateY(-50%); }
+  .seat-name    { font-size: 11px; margin-top: 1px; line-height: 1.1; }
+  .seat-surname { font-size: 8px; letter-spacing: 0.4px; margin-top: 1px; }
+
+  /* ---- Křídla ---- */
+  #left-wing  .seat-column,
+  #right-wing .seat-column { width: 100px; }
+
+  .seat-column { gap: 7px; padding: 0 5px; }
+  .wing-tables { padding: 10px 0; }
+  #wings-wrapper { gap: 28px; }
+
+  /* ---- Hlavní stůl ---- */
+  #head-table { width: min(520px, 80%); }
+  #head-table::before { inset: 16px 0; }
+  #head-row { gap: 4px; padding: 6px; }
+
+  /* ---- Legenda ---- */
+  #print-legend {
+    display: block;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--hairline);
+    max-width: 100%;
+  }
+  .legend-items {
+    display: flex;
+    gap: 20px;
+    font-size: 9px;
+    font-family: var(--sans);
+    color: var(--ink-2);
+    align-items: center;
+  }
+  .legend-items span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend-icon {
+    font-size: 11px;
+    color: var(--bottle);
+    font-variation-settings: 'opsz' 20, 'wght' 300;
+    line-height: 1;
+  }
+
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
