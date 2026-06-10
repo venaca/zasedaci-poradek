@@ -203,6 +203,10 @@ function renderMeta() {
   const el = document.getElementById('wedding-meta');
   if (el) el.textContent = `${STATE.meta.brideName} & ${STATE.meta.groomName} · ${formatDate(STATE.meta.weddingDate)}`;
   document.title = `Zasedací pořádek — ${STATE.meta.brideName} & ${STATE.meta.groomName}`;
+  const pt = document.getElementById('print-title');
+  const pd = document.getElementById('print-date');
+  if (pt) pt.textContent = `${STATE.meta.brideName} & ${STATE.meta.groomName}`;
+  if (pd) pd.textContent = formatDate(STATE.meta.weddingDate);
 }
 
 function renderSeats() {

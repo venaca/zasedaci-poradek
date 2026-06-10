@@ -83,6 +83,25 @@
     </header>
 
     <div id="venue-scroll">
+
+      <!-- Print-only header -->
+      <div id="print-header">
+        <svg id="print-rings" viewBox="0 0 60 26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <clipPath id="cl"><rect x="0" y="0" width="30" height="26"/></clipPath>
+            <clipPath id="cr"><rect x="30" y="0" width="30" height="26"/></clipPath>
+          </defs>
+          <!-- Levý prstýnek — pravá část jde za pravý prstýnek -->
+          <circle cx="22" cy="13" r="10" fill="none" stroke="#2e5c47" stroke-width="1.8" clip-path="url(#cr)"/>
+          <!-- Pravý prstýnek — celý -->
+          <circle cx="38" cy="13" r="10" fill="none" stroke="#2e5c47" stroke-width="1.8"/>
+          <!-- Levý prstýnek — levá část jde před pravý prstýnek -->
+          <circle cx="22" cy="13" r="10" fill="none" stroke="#2e5c47" stroke-width="1.8" clip-path="url(#cl)"/>
+        </svg>
+        <h2 id="print-title"></h2>
+        <p id="print-date"></p>
+      </div>
+
       <div id="venue">
 
         <!-- HEAD TABLE (top of U) -->
