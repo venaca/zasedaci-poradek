@@ -952,11 +952,10 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
   body { background: white !important; overflow: visible; display: block; min-height: 0; height: auto; }
   #sidebar, #top-bar, #btn-add-guest, .modal { display: none !important; }
 
-  #floor-plan { background: white; height: auto; min-height: 0; overflow: visible; }
+  #floor-plan { background: white; height: auto; min-height: 0; overflow: visible; display: block; }
+  #venue-scroll { overflow: visible; padding: 0; height: auto; }
   /* Botanické rohy — v tisku zachováme, jemně */
   #floor-plan::before, #floor-plan::after { opacity: 0.25; }
-
-  #venue-scroll { overflow: visible; padding: 0; }
 
   /* Celý venue musí zůstat pohromadě na jedné stránce */
   #venue {
@@ -976,8 +975,8 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
   .seat::before { height: 5px; border-radius: 3px 3px 0 0; }
 
   .seat-diet-icon { top: 50%; right: 3px; font-size: 5px; transform: translateY(-50%); }
-  .seat-name    { font-size: 11px; margin-top: 1px; line-height: 1.1; }
-  .seat-surname { font-size: 8px; letter-spacing: 0.4px; margin-top: 1px; }
+  .seat-name    { font-size: 11px; margin-top: 1px; line-height: 1.1; font-weight: 600; }
+  .seat-surname { font-size: 8px; letter-spacing: 0.4px; margin-top: 1px; font-weight: 600; }
 
   /* ---- Křídla ---- */
   #left-wing  .seat-column,
